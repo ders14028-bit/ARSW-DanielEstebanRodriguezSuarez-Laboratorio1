@@ -1,44 +1,69 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package edu.eci.arsw.primefinder;
+package co.eci.primefinder;
 
-/**
- *
- */
+import java.util.Scanner;
+
 public class Control extends Thread {
-    
-    private final static int NTHREADS = 3;
-    private final static int MAXVALUE = 30000000;
-    private final static int TMILISECONDS = 5000;
+
+    private static final int NTHREADS = 3;
+    private static final int MAXVALUE = 30_000_000;
+    private static final int TMILISECONDS = 5000;
 
     private final int NDATA = MAXVALUE / NTHREADS;
+    private final PrimeFinderThread[] pft;
+    private final Object monitor = new Object(); 
 
-    private PrimeFinderThread pft[];
-    
     private Control() {
         super();
-        this.pft = new  PrimeFinderThread[NTHREADS];
-
+        this.pft = new PrimeFinderThread[NTHREADS];
         int i;
-        for(i = 0;i < NTHREADS - 1; i++) {
-            PrimeFinderThread elem = new PrimeFinderThread(i*NDATA, (i+1)*NDATA);
-            pft[i] = elem;
+        for (i = 0; i < NTHREADS - 1; i++) {
+            pft[i] = new PrimeFinderThread(i * NDATA, (i + 1) * NDATA, monitor);
         }
-        pft[i] = new PrimeFinderThread(i*NDATA, MAXVALUE + 1);
+        pft[i] = new PrimeFinderThread(i * NDATA, MAXVALUE + 1, monitor);
     }
-    
+
     public static Control newControl() {
         return new Control();
     }
 
     @Override
     public void run() {
-        for(int i = 0;i < NTHREADS;i++ ) {
-            pft[i].start();
+
+        // Start
+        for (PrimeFinderThread t : pft) {
+            t.start();
+        }
+
+        Scanner sc = new Scanner(System.in);
+
+        while (true) {
+            try {
+                Thread.sleep(TMILISECONDS); // Wait
+            } catch (InterruptedException e) {
+                break;
+            }
+
+            // Paused
+            for (PrimeFinderThread t : pft) {
+                t.setPaused(true);
+            }
+
+            int total = 0;
+            for (PrimeFinderThread t : pft) {
+                total += t.getPrimes().size();
+            }
+            System.out.println("\n>>> Primos encontrados hasta ahora: " + total);
+            System.out.println(">>> Presiona ENTER para continuar...");
+
+            sc.nextLine(); 
+
+            synchronized (monitor) {
+                for (PrimeFinderThread t : pft) {
+                    t.setPaused(false);
+                }
+                monitor.notifyAll(); 
+            }
+            System.out.println(">>> Reanudando...\n");
         }
     }
-    
 }

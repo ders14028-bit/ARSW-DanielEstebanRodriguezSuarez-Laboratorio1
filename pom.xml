@@ -42,7 +42,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.3.0</version>
-        <configuration><mainClass>co.eci.snake.app.Main</mainClass></configuration>
+        <configuration><mainClass>co.eci.primefinder.Main</mainClass></configuration>
       </plugin>
     </plugins>
   </build>
