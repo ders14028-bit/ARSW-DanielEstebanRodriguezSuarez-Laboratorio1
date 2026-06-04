@@ -206,5 +206,5 @@ threads the game remains stable. The pause/resume mechanism also works
 correctly under load, suspending and resuming all threads consistently 
 without leaving the game in an inconsistent state.
 
-![alt text]Images/(image-5.png)
+![alt text](Images/image-5.png)
 
