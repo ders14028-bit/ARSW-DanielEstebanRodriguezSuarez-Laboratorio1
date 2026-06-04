@@ -91,15 +91,15 @@ block, guaranteeing all sleeping threads are woken up consistently.
 
 - First screenshot shows the program paused after 5 seconds, displaying the count of primes found so far.
 
-![alt text](<Captura de pantalla 2026-06-03 225436.png>)
+![alt text](Images/Captura%20de%20pantalla%202026-06-03%20225436.png)
 
 - Second screenshot shows the program resumed after pressing ENTER, with worker threads continuing their search.
 
-![alt text](image.png)
+![alt text](Images/image.png)
 
 - Third screenshot shows the program paused again after another 5 seconds, with an updated count of primes found.
 
-![alt text](image-1.png)
+![alt text](Images/image-1.png)
 
 ### Observations
 
@@ -188,13 +188,13 @@ it resumes all threads and the clock simultaneously, ensuring a consistent
 game state on both pause and resume.
 
 - First screenshot shows the game started.
-![alt text](image-2.png)
+![alt text](Images/image-2.png)
 
 - Second screenshot shows the game paused after pressing Action, with a popup showing the longest and shortest snake lengths at that moment.
-![alt text](image-3.png)
+![alt text](Images/image-3.png)
 
 - Third screenshot shows the game resumed after pressing Action again, with snakes continuing to move on screen.
-![alt text](image-4.png)
+![alt text](Images/image-4.png)
 
 ## 4. Robustness under load
 
@@ -206,5 +206,5 @@ threads the game remains stable. The pause/resume mechanism also works
 correctly under load, suspending and resuming all threads consistently 
 without leaving the game in an inconsistent state.
 
-![alt text](image-5.png)
+![alt text]Images/(image-5.png)
 
