@@ -91,6 +91,54 @@ block, guaranteeing all sleeping threads are woken up consistently.
 
 ## Part II — Concurrent SnakeRace (core of the lab)
 
+## 1. Analysis of concurrency
+
+### 1) How the code uses threads
+
+The Snake Race program gives each snake its own independent thread using 
+Java 21 virtual threads. When the application starts, one `SnakeRunner` 
+is created per snake and submitted to a `VirtualThreadPerTaskExecutor`, 
+which automatically assigns a virtual thread to each one.
+
+Inside its thread, each snake runs an infinite loop independently from 
+the others. On every iteration it decides whether to change direction, 
+moves one step on the board, reacts to what it finds (a mouse, an 
+obstacle, a turbo, or a teleport), and then sleeps for 80ms (or 40ms 
+if turbo is active) before repeating.
+
+The UI runs separately on the Swing Event Dispatch Thread (EDT). A 
+`GameClock` triggers a repaint every 60ms using 
+`SwingUtilities.invokeLater()`, keeping the visual update decoupled 
+from the snake movement threads.
+
+### 2) Identified concurrency issues
+
+#### Possible race conditions
+
+If two snakes eat a mouse at the same time, both threads will try to add 
+new elements to the board simultaneously, which could place items in the 
+same position or leave the collections in an inconsistent state.
+
+The `randomEmpty()` method is not protected, so if two threads call it at 
+the same time they could pick the same position for a new element.
+
+#### Unsafe collections in concurrent context
+
+`Snake.body` is an `ArrayDeque`, which is not thread-safe. The snake thread 
+writes to it through `advance()` while the UI thread reads it through 
+`snapshot()` to draw it on screen, which can cause a 
+`ConcurrentModificationException`.
+
+#### Busy-waiting and unnecessary synchronization
+
+The `GameClock` keeps firing every 60ms even when paused, wasting CPU for 
+no reason. Also, pressing Action only stops the repaint but the snake 
+threads keep running in the background, so snakes continue moving even 
+though the screen looks frozen.
+
+## 2. Minimal corrections and critical regions
+
+
 
 
 
