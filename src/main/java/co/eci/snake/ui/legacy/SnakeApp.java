@@ -1,18 +1,32 @@
 package co.eci.snake.ui.legacy;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+
 import co.eci.snake.concurrency.SnakeRunner;
 import co.eci.snake.core.Board;
 import co.eci.snake.core.Direction;
 import co.eci.snake.core.Position;
 import co.eci.snake.core.Snake;
 import co.eci.snake.core.engine.GameClock;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
 
 public final class SnakeApp extends JFrame {
 
@@ -21,6 +35,7 @@ public final class SnakeApp extends JFrame {
   private final JButton actionButton;
   private final GameClock clock;
   private final java.util.List<Snake> snakes = new java.util.ArrayList<>();
+  private final java.util.List<SnakeRunner> runners = new java.util.ArrayList<>();
 
   public SnakeApp() {
     super("The Snake Race");
@@ -48,7 +63,7 @@ public final class SnakeApp extends JFrame {
     this.clock = new GameClock(60, () -> SwingUtilities.invokeLater(gamePanel::repaint));
 
     var exec = Executors.newVirtualThreadPerTaskExecutor();
-    snakes.forEach(s -> exec.submit(new SnakeRunner(s, board)));
+    snakes.forEach(s -> {var runner = new SnakeRunner(s, board); runners.add(runner); exec.submit(runner); });
 
     actionButton.addActionListener((ActionEvent e) -> togglePause());
 
@@ -130,11 +145,15 @@ public final class SnakeApp extends JFrame {
 
   private void togglePause() {
     if ("Action".equals(actionButton.getText())) {
-      actionButton.setText("Resume");
-      clock.pause();
+        actionButton.setText("Resume");
+        runners.forEach(SnakeRunner::pause);
+        clock.pause();
+        try { Thread.sleep(150); } catch (InterruptedException ignored) {}
+        showStats();
     } else {
-      actionButton.setText("Action");
-      clock.resume();
+        actionButton.setText("Action");
+        runners.forEach(SnakeRunner::resume);
+        clock.resume();
     }
   }
 
@@ -233,4 +252,23 @@ public final class SnakeApp extends JFrame {
   public static void launch() {
     SwingUtilities.invokeLater(SnakeApp::new);
   }
+
+
+  private void showStats() {
+    Snake longest = snakes.stream()
+        .max(java.util.Comparator.comparingInt(s -> s.snapshot().size()))
+        .orElse(null);
+    Snake worst = snakes.stream()
+        .min(java.util.Comparator.comparingInt(s -> s.snapshot().size()))
+        .orElse(null);
+
+    String msg = String.format(
+        "Longest snake: %d segments\nWorst snake: %d segments",
+        longest != null ? longest.snapshot().size() : 0,
+        worst   != null ? worst.snapshot().size()   : 0
+    );
+    javax.swing.JOptionPane.showMessageDialog(this, msg, "Game Stats", 
+        javax.swing.JOptionPane.INFORMATION_MESSAGE);
+  }
+
 }

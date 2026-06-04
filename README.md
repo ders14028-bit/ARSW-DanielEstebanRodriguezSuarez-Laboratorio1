@@ -4,6 +4,31 @@
 
 # Laboratory Development
 
+## How to run
+
+### Requirements
+- JDK 21
+- Maven 3.9+
+
+### Part I — PrimeFinder
+
+```bash
+mvn exec:java -Pprimes
+```
+
+Every 5 seconds the program pauses and displays the number of primes 
+found so far. Press **ENTER** to resume.
+
+### Part II — Snake Race
+
+```bash
+# Default (2 snakes)
+mvn exec:java -Psnake
+
+# Custom number of snakes
+mvn exec:java -Psnake -Dsnakes=N
+```
+
 ## Part I — (Warm-up) `wait/notify` in a multi-threaded program
 
 ### Description
@@ -138,7 +163,48 @@ though the screen looks frozen.
 
 ## 2. Minimal corrections and critical regions
 
+`Snake.advance()` and `snapshot()` were synchronized to prevent a data 
+race between the snake thread writing the body and the UI reading it to 
+paint the snake on screen.
 
+`Board.step()` was synchronized so multiple snake threads cannot eat the 
+same mouse or place elements in the same position at the same time.
 
+`Board.randomEmpty()` was synchronized to ensure two threads never pick 
+the same empty position when adding new elements to the board.
 
+`SnakeRunner` was extended with a `paused` flag and a `pauseLock` monitor. 
+Each runner suspends with `pauseLock.wait()` when paused and resumes with 
+`pauseLock.notifyAll()`, avoiding busy-waiting and ensuring a consistent 
+state when the game is paused.
+
+## 3. Safe execution control (UI)
+
+The Action button was updated to support Pause and Resume. When pressed, 
+it pauses all `SnakeRunner` threads and the `GameClock`, waits 150ms for 
+all threads to reach their suspension point, and then displays a popup 
+with the longest and shortest snake at that moment. When pressed again, 
+it resumes all threads and the clock simultaneously, ensuring a consistent 
+game state on both pause and resume.
+
+- First screenshot shows the game started.
+![alt text](image-2.png)
+
+- Second screenshot shows the game paused after pressing Action, with a popup showing the longest and shortest snake lengths at that moment.
+![alt text](image-3.png)
+
+- Third screenshot shows the game resumed after pressing Action again, with snakes continuing to move on screen.
+![alt text](image-4.png)
+
+## 4. Robustness under load
+
+The game was tested with `-Dsnakes=20` and higher values. No 
+`ConcurrentModificationException` or deadlocks were observed. The 
+synchronization applied to `Board.step()`, `Snake.advance()`, and 
+`Snake.snapshot()` ensures that even with a high number of concurrent 
+threads the game remains stable. The pause/resume mechanism also works 
+correctly under load, suspending and resuming all threads consistently 
+without leaving the game in an inconsistent state.
+
+![alt text](image-5.png)
 

@@ -1,10 +1,10 @@
 package co.eci.snake.concurrency;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import co.eci.snake.core.Board;
 import co.eci.snake.core.Direction;
 import co.eci.snake.core.Snake;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class SnakeRunner implements Runnable {
   private final Snake snake;
@@ -12,6 +12,9 @@ public final class SnakeRunner implements Runnable {
   private final int baseSleepMs = 80;
   private final int turboSleepMs = 40;
   private int turboTicks = 0;
+
+  private volatile boolean paused = false;        
+  private final Object pauseLock = new Object();  
 
   public SnakeRunner(Snake snake, Board board) {
     this.snake = snake;
@@ -31,10 +34,28 @@ public final class SnakeRunner implements Runnable {
         }
         int sleep = (turboTicks > 0) ? turboSleepMs : baseSleepMs;
         if (turboTicks > 0) turboTicks--;
+
+        synchronized (pauseLock) {
+          while (paused) {
+            pauseLock.wait();
+          }
+        }
+
         Thread.sleep(sleep);
       }
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
+    }
+  }
+
+  public void pause() {
+    paused = true;  
+  }
+
+  public void resume() {
+    synchronized (pauseLock) {
+      paused = false;
+      pauseLock.notifyAll();
     }
   }
 
